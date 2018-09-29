@@ -1198,3 +1198,66 @@ Automatic Semicolon Insertion - ASI - механизм, расставляющи
   // default
   // 3
 ```
+
+# Приложение
+## Annex B
+JavsScript - браузерная реализация спецификации.
+
+Для описания различных отклонений от спецификации в разных браузерах (и версиях) есть раздел `Annex B`, вот его описание из спеки:
+
+```
+This annex describes various legacy features and other characteristics of web browser based ECMAScript implementations. All of the language features and behaviours specified in this annex have one or more undesirable characteristics and in the absence of legacy usage would be removed from this specification. However, the usage of these features by large numbers of existing web pages means that web browsers must continue to support them. The specifications in this annex define the requirements for interoperable implementations of these legacy features.
+These features are not considered part of the core ECMAScript language. Programmers should not use or assume the existence of these features and behaviours when writing new ECMAScript code. ECMAScript implementations are discouraged from implementing these features unless the implementation is part of a web browser or is required to run the same legacy ECMAScript code that web browsers encounter.
+```
+
+## Host объекты
+Сюда входят встроенные объекты и функции.
+```
+  const a = document.createElement( "div" );
+  typeof a;                            // "object"--as expected
+  Object.prototype.toString.call( a ); // "[object HTMLDivElement]"
+  a.tagName;                           // "DIV"
+```
+
+`a` - не обычный объект, а особый `host объект`. У него другой внутренний класс `[[Class]]` - `HTMLDivElement` и есть встроенные свойства.
+
+Некоторые особенности поведения:
+* Нет доступа к встроенным методам обычного объекта, например `toString()`
+* Не могут быть перезаписаны
+* Имеют некоторые заранее определенные свойства только для чтения
+* Имеют методы, который не могут быть перезаписаны через `this` в другие объекты
+* Проч...
+
+Еще один пример - объект `console`
+
+## Глобальные DOM переменные
+Создание DOM элемента с `id` создает глобальную переменную с таким же названием
+```
+  HTML: <div id="foo"></div>
+  JS: console.log(id); // DOM-node <div id="foo"></div>
+```
+## <script>
+Все подключенные в html скрипты имеют один глобальный объект (`window` в браузере). Всплытие переменных работает для каждого скрипта внутри, не затрагивая другие скрипты.
+
+Можно динамически создавать скрипты и вставлять в DOM, они будут выполнены как отдельный файл.
+
+```
+  const greeting = "Hello World";
+  const el = document.createElement('script');
+
+  el.text = "console.log(greeting)";
+  document.body.appendChild(el);
+
+  // "Hello World"
+```
+
+Вместо указания `el.text` можно указать `el.src` и загрузить внешний скрипт.
+
+## Ограничения реализаций
+Спецификация не указывает различных ограничений, но они есть в реализациях. Например:
+* Мааксимальное количество символов в строковом литерали (не строковом значении)
+* Размер стека
+* Количество параметров в объявлении функции
+* Максимальная длина названия переменной
+* Проч...
+
