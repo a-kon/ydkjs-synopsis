@@ -1074,7 +1074,11 @@ Automatic Semicolon Insertion - ASI - механизм, расставляющи
 Позволяет писать рабочий код с пропуском некоторых `;`.
 
 ## Ошибки
-"Early errors" пока не началось выполнения кода - ошибки не могут быть пойманы в `try..catch`, а эти ошибки возникают при компиляции.
+Все ошибки в JS делятся на 2 категории:
+* Ранние "early" ошибки
+* Возникшие в процессе выполнения "runtime"
+
+"Early errors" возникают до начала исполнения кода (при компиляции) - такие ошибки не могут быть пойманы в `try..catch`:
 
 ```
   try {
@@ -1082,4 +1086,115 @@ Automatic Semicolon Insertion - ASI - механизм, расставляющи
   } catch (error) {
     console.log('k'); // Не сработает
   }
+```
+
+## Использование переменных слишком рано
+В `ES6` определена т.н "временно мертвая зона" (Temporal Dead Zone). Объявления переменных больше не всплывают.
+```
+  {
+    typeof a; // unedeined
+    typeof b; // ReferenceError
+    let b;
+  }
+```
+
+## Аргументы функции
+Еще один пример TDZ можно увидеть в аргументах функции по умолчанию:
+```
+	let b = 3;
+  function foo(a = 42, b = a + b + 5) {
+      // ..
+	}
+
+  foo() // Uncaught ReferenceError: b is not defined
+```
+
+Внешняя `b` игнорируется, что приводит к ошибке при использовании (пока) не объявленной переменной.
+
+Если не передать аргументы в функцию, то они не появятся в массиве аргументов даже при наличии параметров по умолчанию:
+```
+  function foo( a = 42, b = a + 1 ) {
+    console.log(arguments.length);
+  }
+
+  foo(); // 0
+  foo(1); // 1
+```
+
+Вне `strict`-мода можно мутировать элементы `arguments` через параметр функции.
+```
+  function foo(a) {
+      a = 42;
+      console.log( arguments[0] );
+  }
+  foo( 2 );   // 42 (linked)
+  foo();      // undefined (not linked)
+```
+
+Не стоит ссылаться на параметр и соответствующую ему ячейку в массиве аргументов в одно и тоже время.
+
+## try..finally
+Код в `finally` выполнится всегда
+```
+  function foo() {
+    try {
+      return 42;
+    } finally {
+      console.log('finally');
+    }
+  }
+
+  foo(); // 42
+  // 'finally'
+```
+```
+  function foo() {
+    try {
+      return 42;
+    } finally {
+      throw "Oops!";
+      console.log( "never runs" );
+    }
+  }
+  
+  console.log(foo());
+  //Uncaught Oops!
+```
+
+Если в `finally` явно указан `return` - это значение перепишет `return` из `try` или `catch`
+
+## switch
+По умолчанию сравнивается через `===`, но можно явно передать `==` с помощью хака:
+```
+  const a = 1;
+
+  switch(true) {
+    case a == '1':
+        console.log('string fired');
+    break;
+    case 1:
+        console.log('number fired');
+    break;
+  }
+
+  // 'string fired'
+  // 'number fired'
+```
+
+`default` можно вынести и в начало, но его ставят в конце по соглашению.
+```
+  let a = 10;
+  switch (a) {
+    case 1:
+    case 2:
+      console.log('never gets here');
+    default:
+      console.log('default');
+    case 3:
+      console.log('3');
+      break;
+    case 4:
+  }
+  // default
+  // 3
 ```
